@@ -6,5 +6,5 @@ import com.finding_a_partner.authservice.model.RegisterRequest
 interface UserService {
     fun registerUser(registerRequest: RegisterRequest): User
 
-    fun authenticate(username: String, password: String): User?
+    fun authenticate(login: String, password: String): User?
 }

@@ -1,17 +1,19 @@
 package com.finding_a_partner.authservice.entity
 
+import com.finding_a_partner.authservice.enum.Role
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import org.hibernate.annotations.CreationTimestamp
+import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "users")
+@Table(name = "`users`")
 data class User(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
     @Column(unique = true, nullable = false)
-    val username: String,
+    val login: String,
 
     @Column(unique = true, nullable = false)
     val email: String,
@@ -19,7 +21,11 @@ data class User(
     @Column(nullable = false)
     val password: String,
 
-    val roles: String = "ROLE_USER",
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    val role: Role = Role.USER,
 
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    @Column(name = "created_at")
+    @CreationTimestamp
+    val createdAt: OffsetDateTime = OffsetDateTime.now(),
 )

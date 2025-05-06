@@ -1,8 +1,10 @@
 package com.finding_a_partner.authservice.controller
 
 import com.finding_a_partner.authservice.config.JwtUtils
-import com.finding_a_partner.authservice.model.AuthenticationRequest
+import com.finding_a_partner.authservice.feign.UserClient
+import com.finding_a_partner.authservice.feign.UserRequest
 import com.finding_a_partner.authservice.model.AuthResponse
+import com.finding_a_partner.authservice.model.AuthenticationRequest
 import com.finding_a_partner.authservice.model.RegisterRequest
 import com.finding_a_partner.authservice.service.UserService
 import jakarta.validation.Valid
@@ -14,14 +16,17 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/auth")
 class AuthController(
     private val userService: UserService,
-    private val jwtUtils: JwtUtils
+    private val jwtUtils: JwtUtils,
 ) {
 
     @PostMapping("/register")
-    fun register(@Valid @RequestBody registerRequest: RegisterRequest): ResponseEntity<Any> {
+    fun register(
+        @Valid @RequestBody
+        registerRequest: RegisterRequest,
+    ): ResponseEntity<Any> {
         return try {
             val user = userService.registerUser(registerRequest)
-            val token = jwtUtils.generateToken(user.username)
+            val token = jwtUtils.generateToken(user.login)
             ResponseEntity(AuthResponse(accessToken = token), HttpStatus.CREATED)
         } catch (ex: IllegalArgumentException) {
             ResponseEntity(ex.message, HttpStatus.BAD_REQUEST)
@@ -29,10 +34,13 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    fun login(@Valid @RequestBody authRequest: AuthenticationRequest): ResponseEntity<Any> {
-        val user = userService.authenticate(authRequest.username, authRequest.password)
+    fun login(
+        @Valid @RequestBody
+        authRequest: AuthenticationRequest,
+    ): ResponseEntity<Any> {
+        val user = userService.authenticate(authRequest.login, authRequest.password)
         return if (user != null) {
-            val token = jwtUtils.generateToken(user.username)
+            val token = jwtUtils.generateToken(user.login)
             ResponseEntity(AuthResponse(accessToken = token), HttpStatus.OK)
         } else {
             ResponseEntity("Неверное имя пользователя или пароль", HttpStatus.UNAUTHORIZED)
@@ -68,5 +76,4 @@ class AuthController(
         val token = authorization.substring(7)
         return ResponseEntity.ok("Logged out successfully")
     }
-
 }
