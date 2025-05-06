@@ -26,7 +26,7 @@ class AuthController(
     ): ResponseEntity<Any> {
         return try {
             val user = userService.registerUser(registerRequest)
-            val token = jwtUtils.generateToken(user.login)
+            val token = jwtUtils.generateToken(user.login, user.id.toString())
             ResponseEntity(AuthResponse(accessToken = token), HttpStatus.CREATED)
         } catch (ex: IllegalArgumentException) {
             ResponseEntity(ex.message, HttpStatus.BAD_REQUEST)
@@ -40,7 +40,7 @@ class AuthController(
     ): ResponseEntity<Any> {
         val user = userService.authenticate(authRequest.login, authRequest.password)
         return if (user != null) {
-            val token = jwtUtils.generateToken(user.login)
+            val token = jwtUtils.generateToken(user.login, user.id.toString())
             ResponseEntity(AuthResponse(accessToken = token), HttpStatus.OK)
         } else {
             ResponseEntity("Неверное имя пользователя или пароль", HttpStatus.UNAUTHORIZED)
@@ -61,7 +61,7 @@ class AuthController(
     fun refreshToken(@RequestParam token: String): ResponseEntity<Any> {
         val username = jwtUtils.extractUsername(token)
         return if (jwtUtils.validateToken(token, username)) {
-            val newToken = jwtUtils.generateToken(username)
+            val newToken = jwtUtils.generateToken(username, jwtUtils.extractUserId(token))
             ResponseEntity(AuthResponse(accessToken = newToken), HttpStatus.OK)
         } else {
             ResponseEntity("Invalid token", HttpStatus.UNAUTHORIZED)

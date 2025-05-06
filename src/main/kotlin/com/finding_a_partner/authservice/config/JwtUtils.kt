@@ -94,12 +94,13 @@ class JwtUtils(
     val privateKey = keyPair.private
     private val jwtExpirationInMs: Long = 15 * 60 * 1000
 
-    fun generateToken(username: String): String {
+    fun generateToken(username: String, userId: String): String {
         val now = Date()
         val expiryDate = Date(now.time + jwtExpirationInMs)
 
         return Jwts.builder()
             .setSubject(username)
+            .claim("userId", userId)
             .setIssuedAt(now)
             .setExpiration(expiryDate)
             .setHeaderParam("kid", "auth-key")
@@ -109,6 +110,11 @@ class JwtUtils(
 
     fun extractUsername(token: String): String {
         return getClaimsFromToken(token).subject
+    }
+
+    fun extractUserId(token: String): String {
+        val claims = getClaimsFromToken(token)
+        return claims["userId"] as String
     }
 
     fun isTokenExpired(token: String): Boolean {
