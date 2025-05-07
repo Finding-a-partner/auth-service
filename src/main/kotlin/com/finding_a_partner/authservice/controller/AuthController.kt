@@ -2,7 +2,6 @@ package com.finding_a_partner.authservice.controller
 
 import com.finding_a_partner.authservice.config.JwtUtils
 import com.finding_a_partner.authservice.feign.UserClient
-import com.finding_a_partner.authservice.feign.UserRequest
 import com.finding_a_partner.authservice.model.AuthResponse
 import com.finding_a_partner.authservice.model.AuthenticationRequest
 import com.finding_a_partner.authservice.model.RegisterRequest
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.*
 class AuthController(
     private val userService: UserService,
     private val jwtUtils: JwtUtils,
+        private val userClient: UserClient
 ) {
 
     @PostMapping("/register")
@@ -27,7 +27,7 @@ class AuthController(
         return try {
             val user = userService.registerUser(registerRequest)
             val token = jwtUtils.generateToken(user.login, user.id.toString())
-            ResponseEntity(AuthResponse(accessToken = token), HttpStatus.CREATED)
+            ResponseEntity(AuthResponse(accessToken = token, user = user), HttpStatus.CREATED)
         } catch (ex: IllegalArgumentException) {
             ResponseEntity(ex.message, HttpStatus.BAD_REQUEST)
         }
@@ -41,7 +41,7 @@ class AuthController(
         val user = userService.authenticate(authRequest.login, authRequest.password)
         return if (user != null) {
             val token = jwtUtils.generateToken(user.login, user.id.toString())
-            ResponseEntity(AuthResponse(accessToken = token), HttpStatus.OK)
+            ResponseEntity(AuthResponse(accessToken = token, user = user), HttpStatus.OK)
         } else {
             ResponseEntity("Неверное имя пользователя или пароль", HttpStatus.UNAUTHORIZED)
         }
@@ -62,7 +62,8 @@ class AuthController(
         val username = jwtUtils.extractUsername(token)
         return if (jwtUtils.validateToken(token, username)) {
             val newToken = jwtUtils.generateToken(username, jwtUtils.extractUserId(token))
-            ResponseEntity(AuthResponse(accessToken = newToken), HttpStatus.OK)
+            val user = userClient.getByLogin(username)
+            ResponseEntity(AuthResponse(accessToken = newToken, user = user), HttpStatus.OK)
         } else {
             ResponseEntity("Invalid token", HttpStatus.UNAUTHORIZED)
         }
